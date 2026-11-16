@@ -31,7 +31,7 @@
                         <h5 class="fw-bold">CRUD de Usuarios</h5>
                         <p class="text-muted small">Gestión de roles, permisos y eliminación lógica (Soft Deletes).</p>
                     </div>
-                    <a href="#" class="btn btn-dark w-100 disabled">Próximamente</a>
+                    <a href="{{ route('usuarios.index') }}" class="btn btn-primary w-100 fw-bold">Entrar al Módulo</a>
                 </div>
             </div>
         </div>
