@@ -73,7 +73,7 @@
                         <h5 class="fw-bold">Reservación de Equipos</h5>
                         <p class="text-muted small">Sesiones independientes y control de concurrencia en reservas.</p>
                     </div>
-                    <a href="#" class="btn btn-dark w-100 disabled">Próximamente</a>
+                    <a href="{{ route('computo.index') }}" class="btn btn-warning text-dark w-100 fw-bold">Entrar al Módulo</a>
                 </div>
             </div>
         </div>

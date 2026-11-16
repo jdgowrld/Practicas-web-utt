@@ -51,7 +51,6 @@ Route::middleware(['auth', '2fa'])->group(function () {
 
 
     // PRÁCTICA 1.3: SISTEMA ACADÉMICO
-    
     // Consulta general (Profesor/Admin ven tabla; Alumno ve solo su boleta)
     Route::middleware(['rol:admin,profesor,alumno'])->group(function () {
         Route::get('/academico', [App\Http\Controllers\CalificacionController::class, 'index'])->name('academico.index');
@@ -80,6 +79,26 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::get('/productos/{producto}/editar', [App\Http\Controllers\ProductoController::class, 'edit'])->name('productos.edit');
         Route::put('/productos/{producto}', [App\Http\Controllers\ProductoController::class, 'update'])->name('productos.update');
         Route::delete('/productos/{producto}', [App\Http\Controllers\ProductoController::class, 'destroy'])->name('productos.destroy');
+    });
+
+
+    
+    // PRÁCTICA 1.5: RESERVACIÓN DE EQUIPOS
+    
+    // Consulta, reserva y cancelación propia (Admin y Estudiante)
+    Route::middleware(['rol:admin,estudiante'])->group(function () {
+        Route::get('/computo', [App\Http\Controllers\ReservacionController::class, 'index'])->name('computo.index');
+        Route::post('/computo/reservar/{equipo}', [App\Http\Controllers\ReservacionController::class, 'reservar'])->name('computo.reservar');
+        Route::patch('/computo/cancelar/{reservacion}', [App\Http\Controllers\ReservacionController::class, 'cancelar'])->name('computo.cancelar');
+    });
+
+    // Administración del catálogo de equipos (Exclusivo Admin)
+    Route::middleware(['rol:admin'])->group(function () {
+        Route::get('/computo/equipos/crear', [App\Http\Controllers\EquipoController::class, 'create'])->name('equipos.create');
+        Route::post('/computo/equipos', [App\Http\Controllers\EquipoController::class, 'store'])->name('equipos.store');
+        Route::get('/computo/equipos/{equipo}/editar', [App\Http\Controllers\EquipoController::class, 'edit'])->name('equipos.edit');
+        Route::put('/computo/equipos/{equipo}', [App\Http\Controllers\EquipoController::class, 'update'])->name('equipos.update');
+        Route::delete('/computo/equipos/{equipo}', [App\Http\Controllers\EquipoController::class, 'destroy'])->name('equipos.destroy');
     });
 
 });
