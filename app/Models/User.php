@@ -12,6 +12,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password', 'rol', 'two_factor_code', 'two_factor_expires_at'])]
 #[Hidden(['password', 'remember_token'])]
+
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
@@ -24,4 +25,10 @@ class User extends Authenticatable
             'two_factor_expires_at' => 'datetime',
         ];
     }
+
+    public function calificacion()
+    {
+        return $this->hasOne(Calificacion::class, 'user_id');
+    }
+
 }

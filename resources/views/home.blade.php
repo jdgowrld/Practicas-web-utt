@@ -45,7 +45,7 @@
                         <h5 class="fw-bold">Sistema Académico</h5>
                         <p class="text-muted small">Calificaciones, faltas y equivalencias automáticas (NA, SA, DE, AU).</p>
                     </div>
-                    <a href="#" class="btn btn-dark w-100 disabled">Próximamente</a>
+                    <a href="{{ route('academico.index') }}" class="btn btn-success w-100 fw-bold">Entrar al Módulo</a>
                 </div>
             </div>
         </div>

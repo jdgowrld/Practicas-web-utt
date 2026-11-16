@@ -32,8 +32,6 @@ Route::middleware(['auth', '2fa'])->group(function () {
     //  rutas de las Prácticas 1.2 a 1.6
 
     // PRÁCTICA 1.2: CRUD DE USUARIOS
-    
-    
     // Rutas permitidas para Admin y Empleado (Lectura, Creación y Edición)
     Route::middleware(['rol:admin,empleado'])->group(function () {
         Route::get('/usuarios', [App\Http\Controllers\UserController::class, 'index'])->name('usuarios.index');
@@ -49,6 +47,39 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::delete('/usuarios/{usuario}', [App\Http\Controllers\UserController::class, 'destroy'])->name('usuarios.destroy');
         Route::patch('/usuarios/{id}/restaurar', [App\Http\Controllers\UserController::class, 'restore'])->name('usuarios.restore');
         Route::delete('/usuarios/{id}/forzar', [App\Http\Controllers\UserController::class, 'forceDelete'])->name('usuarios.forceDelete');
+    });
+
+
+    // PRÁCTICA 1.3: SISTEMA ACADÉMICO
+    
+    // Consulta general (Profesor/Admin ven tabla; Alumno ve solo su boleta)
+    Route::middleware(['rol:admin,profesor,alumno'])->group(function () {
+        Route::get('/academico', [App\Http\Controllers\CalificacionController::class, 'index'])->name('academico.index');
+    });
+
+    // Operaciones de escritura protegidas solo para Profesor (y Admin)
+    Route::middleware(['rol:admin,profesor'])->group(function () {
+        Route::get('/academico/crear', [App\Http\Controllers\CalificacionController::class, 'create'])->name('academico.create');
+        Route::post('/academico', [App\Http\Controllers\CalificacionController::class, 'store'])->name('academico.store');
+        Route::get('/academico/{academico}/editar', [App\Http\Controllers\CalificacionController::class, 'edit'])->name('academico.edit');
+        Route::put('/academico/{academico}', [App\Http\Controllers\CalificacionController::class, 'update'])->name('academico.update');
+        Route::delete('/academico/{academico}', [App\Http\Controllers\CalificacionController::class, 'destroy'])->name('academico.destroy');
+    });
+
+
+    // PRÁCTICA 1.4: GESTIÓN DE PRODUCTOS    
+    // Consulta, filtros, ordenamiento y paginación (Admin y Empleado)
+    Route::middleware(['rol:admin,empleado'])->group(function () {
+        Route::get('/productos', [App\Http\Controllers\ProductoController::class, 'index'])->name('productos.index');
+    });
+
+    // Escritura exclusiva para Administrador
+    Route::middleware(['rol:admin'])->group(function () {
+        Route::get('/productos/crear', [App\Http\Controllers\ProductoController::class, 'create'])->name('productos.create');
+        Route::post('/productos', [App\Http\Controllers\ProductoController::class, 'store'])->name('productos.store');
+        Route::get('/productos/{producto}/editar', [App\Http\Controllers\ProductoController::class, 'edit'])->name('productos.edit');
+        Route::put('/productos/{producto}', [App\Http\Controllers\ProductoController::class, 'update'])->name('productos.update');
+        Route::delete('/productos/{producto}', [App\Http\Controllers\ProductoController::class, 'destroy'])->name('productos.destroy');
     });
 
 });
