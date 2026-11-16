@@ -36,7 +36,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'rol' => ['required', Rule::in(['admin', 'empleado', 'profesor', 'alumno', 'estudiante', 'jugador'])],
+            'rol' => ['required', Rule::in(['admin', 'empleado', 'profesor', 'alumno', 'jugador'])],
         ], [
             'name.required' => 'El nombre es obligatorio.',
             'email.required' => 'El correo es obligatorio.',
@@ -97,7 +97,7 @@ class UserController extends Controller
 
         // Solo exigimos y validamos el rol si el usuario logueado es Admin
         if (Auth::user()->rol === 'admin') {
-            $rules['rol'] = ['required', Rule::in(['admin', 'empleado', 'profesor', 'alumno', 'estudiante', 'jugador'])];
+    $rules['rol'] = ['required', Rule::in(['admin', 'empleado', 'profesor', 'alumno', 'jugador'])];
         }
 
         $request->validate($rules, [

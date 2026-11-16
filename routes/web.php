@@ -86,10 +86,10 @@ Route::middleware(['auth', '2fa'])->group(function () {
     // PRÁCTICA 1.5: RESERVACIÓN DE EQUIPOS
     
     // Consulta, reserva y cancelación propia (Admin y Estudiante)
-    Route::middleware(['rol:admin,estudiante'])->group(function () {
-        Route::get('/computo', [App\Http\Controllers\ReservacionController::class, 'index'])->name('computo.index');
-        Route::post('/computo/reservar/{equipo}', [App\Http\Controllers\ReservacionController::class, 'reservar'])->name('computo.reservar');
-        Route::patch('/computo/cancelar/{reservacion}', [App\Http\Controllers\ReservacionController::class, 'cancelar'])->name('computo.cancelar');
+    Route::middleware(['rol:admin,alumno'])->group(function () {
+    Route::get('/computo', [App\Http\Controllers\ReservacionController::class, 'index'])->name('computo.index');
+    Route::post('/computo/reservar/{equipo}', [App\Http\Controllers\ReservacionController::class, 'reservar'])->name('computo.reservar');
+    Route::patch('/computo/cancelar/{reservacion}', [App\Http\Controllers\ReservacionController::class, 'cancelar'])->name('computo.cancelar');
     });
 
     // Administración del catálogo de equipos (Exclusivo Admin)

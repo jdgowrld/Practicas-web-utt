@@ -32,7 +32,6 @@
                                 <option value="empleado" {{ old('rol', $usuario->rol) == 'empleado' ? 'selected' : '' }}>Empleado</option>
                                 <option value="profesor" {{ old('rol', $usuario->rol) == 'profesor' ? 'selected' : '' }}>Profesor</option>
                                 <option value="alumno" {{ old('rol', $usuario->rol) == 'alumno' ? 'selected' : '' }}>Alumno</option>
-                                <option value="estudiante" {{ old('rol', $usuario->rol) == 'estudiante' ? 'selected' : '' }}>Estudiante</option>
                                 <option value="jugador" {{ old('rol', $usuario->rol) == 'jugador' ? 'selected' : '' }}>Jugador</option>
                             </select>
                             @error('rol') <div class="invalid-feedback">{{ $message }}</div> @enderror
