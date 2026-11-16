@@ -59,7 +59,7 @@
                         <h5 class="fw-bold">Gestión de Productos</h5>
                         <p class="text-muted small">Catálogo con paginación dinámica, filtros combinados y ordenamiento.</p>
                     </div>
-                    <a href="#" class="btn btn-dark w-100 disabled">Próximamente</a>
+                    <a href="{{ route('productos.index') }}" class="btn btn-info text-dark w-100 fw-bold">Entrar al Módulo</a>
                 </div>
             </div>
         </div>
