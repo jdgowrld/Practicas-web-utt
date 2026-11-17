@@ -87,7 +87,7 @@
                         <h5 class="fw-bold">Juego del Gato (3x3)</h5>
                         <p class="text-muted small">Partidas multijugador por turnos con sincronización en base de datos.</p>
                     </div>
-                    <a href="#" class="btn btn-dark w-100 disabled">Próximamente</a>
+                    <a href="{{ route('gato.index') }}" class="btn btn-danger w-100 fw-bold">Entrar al Módulo</a>
                 </div>
             </div>
         </div>

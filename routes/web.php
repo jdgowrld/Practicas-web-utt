@@ -101,4 +101,17 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::delete('/computo/equipos/{equipo}', [App\Http\Controllers\EquipoController::class, 'destroy'])->name('equipos.destroy');
     });
 
+
+    // ==========================================
+    // PRÁCTICA 1.6: JUEGO DEL GATO (3x3)
+    // ==========================================
+    Route::middleware(['rol:admin,jugador,alumno'])->group(function () {
+        Route::get('/gato', [App\Http\Controllers\GatoController::class, 'index'])->name('gato.index');
+        Route::post('/gato/crear', [App\Http\Controllers\GatoController::class, 'crear'])->name('gato.crear');
+        Route::post('/gato/{partida}/unirse', [App\Http\Controllers\GatoController::class, 'unirse'])->name('gato.unirse');
+        Route::get('/gato/{partida}/jugar', [App\Http\Controllers\GatoController::class, 'jugar'])->name('gato.jugar');
+        Route::get('/gato/{partida}/estado', [App\Http\Controllers\GatoController::class, 'estado'])->name('gato.estado');
+        Route::post('/gato/{partida}/tirar', [App\Http\Controllers\GatoController::class, 'tirar'])->name('gato.tirar');
+    });
+
 });
