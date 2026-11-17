@@ -53,7 +53,7 @@ class ProductoController extends Controller
         // Paginación conservando los parámetros de búsqueda y ordenamiento
         $productos = $query->paginate($perPage)->withQueryString();
         $categorias = Categoria::orderBy('nombre')->get();
-
+        session(['productos_url_retorno' => $request->fullUrl()]);
         return view('productos.index', compact('productos', 'categorias', 'perPage', 'orden'));
     }
 
@@ -66,7 +66,9 @@ class ProductoController extends Controller
     public function store(StoreProductoRequest $request)
     {
         Producto::create($request->validated());
-        return redirect()->route('productos.index')->with('success', 'Producto registrado correctamente.');
+
+        return redirect(session('productos_url_retorno', route('productos.index')))
+            ->with('success', 'Producto registrado correctamente.');
     }
 
     public function edit(Producto $producto)
@@ -77,13 +79,17 @@ class ProductoController extends Controller
 
     public function update(UpdateProductoRequest $request, Producto $producto)
     {
-        $producto->update($request->validated());
-        return redirect()->route('productos.index')->with('success', 'Producto actualizado correctamente.');
+    $producto->update($request->validated());
+
+    return redirect(session('productos_url_retorno', route('productos.index')))
+        ->with('success', 'Producto actualizado correctamente.');
     }
 
     public function destroy(Producto $producto)
     {
-        $producto->delete();
-        return redirect()->route('productos.index')->with('success', 'Producto eliminado del catálogo.');
+    $producto->delete();
+
+    return redirect(session('productos_url_retorno', route('productos.index')))
+        ->with('success', 'Producto eliminado del catálogo.');
     }
 }

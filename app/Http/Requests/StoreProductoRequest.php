@@ -43,4 +43,14 @@ class StoreProductoRequest extends FormRequest
             'estado.in' => 'El estado debe ser Disponible o Agotado.',
         ];
     }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->input('estado') === 'Disponible' && (int) $this->input('existencias') <= 0) {
+                $validator->errors()->add('estado', 'No puedes marcar el producto como Disponible si tiene 0 existencias.');
+            }
+        });
+    }
+
 }

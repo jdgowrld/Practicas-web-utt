@@ -13,7 +13,7 @@
                         <x-producto-form :categorias="$categorias" />
 
                         <div class="d-flex justify-content-between">
-                            <a href="{{ route('productos.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                            <a href="{{ session('productos_url_retorno', route('productos.index')) }}" class="btn btn-outline-secondary">Cancelar</a>
                             <button type="submit" class="btn btn-info text-dark fw-bold">Guardar Producto</button>
                         </div>
                     </form>

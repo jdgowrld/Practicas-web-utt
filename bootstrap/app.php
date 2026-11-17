@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->alias([
         '2fa' => \App\Http\Middleware\VerificarDobleFactor::class,
         'rol' => \App\Http\Middleware\CheckRole::class,
+        'no-cache' => \App\Http\Middleware\PreventBackHistory::class,
     ]);
 })
     ->withExceptions(function (Exceptions $exceptions): void {

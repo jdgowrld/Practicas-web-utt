@@ -24,7 +24,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Bóveda Protegida (Requiere Auth + 2FA completado si es Admin)
-Route::middleware(['auth', '2fa'])->group(function () {
+    Route::middleware(['auth', '2fa', 'no-cache'])->group(function () {
     Route::get('/home', function () {
         return view('home');
     })->name('home');
@@ -64,7 +64,6 @@ Route::middleware(['auth', '2fa'])->group(function () {
         Route::put('/academico/{academico}', [App\Http\Controllers\CalificacionController::class, 'update'])->name('academico.update');
         Route::delete('/academico/{academico}', [App\Http\Controllers\CalificacionController::class, 'destroy'])->name('academico.destroy');
     });
-
 
     // PRÁCTICA 1.4: GESTIÓN DE PRODUCTOS    
     // Consulta, filtros, ordenamiento y paginación (Admin y Empleado)
