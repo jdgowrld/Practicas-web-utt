@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Equipo;
+use App\Models\Reservacion;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class EquipoController extends Controller
@@ -15,7 +17,7 @@ class EquipoController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'codigo' => 'required|string|max:50|unique:equipos,codigo',
             'descripcion' => 'required|string|max:255',
             'estado' => ['required', Rule::in(['Disponible', 'Mantenimiento'])],
@@ -25,19 +27,14 @@ class EquipoController extends Controller
             'descripcion.required' => 'La descripción es obligatoria.',
         ]);
 
-        Equipo::create($request->validated());
+        Equipo::create($validated);
 
         return redirect()->route('computo.index')->with('success', 'Equipo registrado en el laboratorio.');
     }
 
-    public function edit(Equipo $equipo)
-    {
-        return view('computo.equipos.edit', compact('equipo'));
-    }
-
     public function update(Request $request, Equipo $equipo)
     {
-        $request->validate([
+        $validated = $request->validate([
             'codigo' => ['required', 'string', 'max:50', Rule::unique('equipos', 'codigo')->ignore($equipo->id)],
             'descripcion' => 'required|string|max:255',
             'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Mantenimiento'])],
@@ -47,9 +44,24 @@ class EquipoController extends Controller
             'descripcion.required' => 'La descripción es obligatoria.',
         ]);
 
-        $equipo->update($request->validated());
+        DB::transaction(function () use ($equipo, $validated) {
+            // Si el Admin pasa el equipo a Mantenimiento o lo libera manualmente a Disponible,
+            // cancelamos automáticamente cualquier reservación activa que tuviera ese equipo.
+            if (in_array($validated['estado'], ['Mantenimiento', 'Disponible'])) {
+                Reservacion::where('equipo_id', $equipo->id)
+                    ->where('estado', 'Activa')
+                    ->update(['estado' => 'Cancelada']);
+            }
 
-        return redirect()->route('computo.index')->with('success', 'Equipo actualizado correctamente.');
+            $equipo->update($validated);
+        });
+
+        return redirect()->route('computo.index')->with('success', 'Equipo actualizado y reservaciones sincronizadas.');
+    }
+
+    public function edit(Equipo $equipo)
+    {
+        return view('computo.equipos.edit', compact('equipo'));
     }
 
     public function destroy(Equipo $equipo)
