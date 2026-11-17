@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Partida;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,28 +12,72 @@ use Illuminate\Support\Facades\DB;
 class GatoController extends Controller
 {
     // Lobby: Salas disponibles y mis partidas
+    // Lobby: Salas disponibles, jugadores registrados y panel completo para Admin
     public function index()
     {
-        $userId = Auth::id();
+        $user = Auth::user();
+        $userId = $user->id;
 
-        // Salas esperando oponente (creadas por otros usuarios)
+        // 1. Salas esperando oponente (creadas por otros)
         $salasDisponibles = Partida::with('jugadorX')
             ->where('estado', 'Esperando')
             ->where('jugador_x_id', '!=', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Mis partidas activas o recientes
-        $misPartidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
-            ->where(function ($q) use ($userId) {
-                $q->where('jugador_x_id', $userId)
-                  ->orWhere('jugador_o_id', $userId);
-            })
-            ->orderBy('updated_at', 'desc')
-            ->limit(10)
-            ->get();
+        // 2. Jugadores disponibles (Usuarios con rol 'jugador', excluyendo al usuario actual)
+        // Verificamos si actualmente están ocupados en una partida 'EnCurso' o 'Esperando'
+        $jugadoresDisponibles = User::where('rol', 'jugador')
+            ->where('id', '!=', $userId)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($jugador) {
+                $enPartida = Partida::whereIn('estado', ['Esperando', 'EnCurso'])
+                    ->where(function ($q) use ($jugador) {
+                        $q->where('jugador_x_id', $jugador->id)
+                          ->orWhere('jugador_o_id', $jugador->id);
+                    })
+                    ->exists();
 
-        return view('gato.index', compact('salasDisponibles', 'misPartidas'));
+                $jugador->ocupado = $enPartida;
+                return $jugador;
+            });
+
+        // 3. Partidas: El Admin ve TODAS las del sistema; el Jugador solo las suyas
+        if ($user->rol === 'admin') {
+            $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
+                ->orderBy('updated_at', 'desc')
+                ->get();
+        } else {
+            $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
+                ->where(function ($q) use ($userId) {
+                    $q->where('jugador_x_id', $userId)
+                      ->orWhere('jugador_o_id', $userId);
+                })
+                ->orderBy('updated_at', 'desc')
+                ->limit(10)
+                ->get();
+        }
+
+        return view('gato.index', compact('salasDisponibles', 'jugadoresDisponibles', 'partidas'));
+    }
+
+    // Cancelar partida en curso o esperando (Exclusivo Admin)
+    public function cancelarPartida(Partida $partida)
+    {
+        if (Auth::user()->rol !== 'admin') {
+            abort(403, 'Solo un Administrador puede cancelar partidas.');
+        }
+
+        if ($partida->estado === 'Finalizada') {
+            return back()->with('error', 'Esta partida ya estaba finalizada.');
+        }
+
+        $partida->estado = 'Finalizada';
+        $partida->turno_user_id = null;
+        $partida->save();
+
+        return redirect()->route('gato.index')->with('success', "Sala #{$partida->id} cancelada por el Administrador.");
     }
 
     // Crear una nueva sala (El creador siempre es 'X')

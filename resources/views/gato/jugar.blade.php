@@ -101,6 +101,9 @@
             if (data.es_empate) {
                 banner.className = 'alert alert-dark fw-bold py-2 mb-3';
                 banner.textContent = '¡EMPATE! Tablero lleno sin ganador';
+            } else if (data.ganador_id === null) {
+                banner.className = 'alert alert-warning fw-bold py-2 mb-3';
+                banner.textContent = 'Partida cancelada por el Administrador';
             } else if (data.ganador_id === userId) {
                 banner.className = 'alert alert-success fw-bold py-2 mb-3';
                 banner.textContent = '¡FELICIDADES! GANASTE LA PARTIDA';
