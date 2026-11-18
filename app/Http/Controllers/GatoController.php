@@ -60,47 +60,62 @@ class GatoController extends Controller
         return view('gato.index', compact('salasDisponibles', 'jugadoresDisponibles', 'partidas'));
     }
 
-    // Cancelar partida en curso o esperando (Exclusivo Admin)
-    public function cancelarPartida(Partida $partida)
+    public function abandonar($partidaId)
+    {
+        $userId = Auth::id();
+
+        try {
+            DB::transaction(function () use ($partidaId, $userId) {
+                $partida = Partida::where('id', $partidaId)->lockForUpdate()->firstOrFail();
+
+                if ($partida->jugador_x_id !== $userId && $partida->jugador_o_id !== $userId) {
+                    abort(403, 'No eres participante de esta partida.');
+                }
+
+                if ($partida->estado === 'Finalizada') {
+                    throw new Exception('Esta partida ya ha finalizado.');
+                }
+
+                if ($partida->estado === 'EnCurso') {
+                    $partida->ganador_id = ($userId === $partida->jugador_x_id)
+                        ? $partida->jugador_o_id
+                        : $partida->jugador_x_id;
+                }
+
+                $partida->estado = 'Finalizada';
+                $partida->turno_user_id = null;
+                $partida->save();
+            });
+
+            return redirect()->route('gato.index')->with('success', 'Has abandonado la partida.');
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function cancelarPartida($partidaId)
     {
         if (Auth::user()->rol !== 'admin') {
             abort(403, 'Solo un Administrador puede cancelar partidas.');
         }
 
-        if ($partida->estado === 'Finalizada') {
-            return back()->with('error', 'Esta partida ya estaba finalizada.');
+        try {
+            DB::transaction(function () use ($partidaId) {
+                $partida = Partida::where('id', $partidaId)->lockForUpdate()->firstOrFail();
+
+                if ($partida->estado === 'Finalizada') {
+                    throw new Exception('Esta partida ya estaba finalizada.');
+                }
+
+                $partida->estado = 'Finalizada';
+                $partida->turno_user_id = null;
+                $partida->save();
+            });
+
+            return redirect()->route('gato.index')->with('success', "Sala #{$partidaId} cancelada por el Administrador.");
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $partida->estado = 'Finalizada';
-        $partida->turno_user_id = null;
-        $partida->save();
-
-        return redirect()->route('gato.index')->with('success', "Sala #{$partida->id} cancelada por el Administrador.");
-    }
-
-    public function abandonar(Partida $partida)
-    {
-        $userId = Auth::id();
-
-        if ($partida->jugador_x_id !== $userId && $partida->jugador_o_id !== $userId) {
-            abort(403, 'No eres participante de esta partida.');
-        }
-
-        if ($partida->estado === 'Finalizada') {
-            return back()->with('error', 'Esta partida ya ha finalizado.');
-        }
-
-        if ($partida->estado === 'EnCurso') {
-            $partida->ganador_id = ($userId === $partida->jugador_x_id)
-                ? $partida->jugador_o_id
-                : $partida->jugador_x_id;
-        }
-
-        $partida->estado = 'Finalizada';
-        $partida->turno_user_id = null;
-        $partida->save();
-
-        return redirect()->route('gato.index')->with('success', 'Has abandonado la partida.');
     }
 
 

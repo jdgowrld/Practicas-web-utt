@@ -30,24 +30,27 @@ class ReservacionController extends Controller
         return view('computo.index', compact('equipos', 'reservaciones'));
     }
 
-    // Reservar un equipo con Transacción y Bloqueo de Fila (Anti-Concurrencia)
+    // Reservar un equipo con bloqueo a nivel de Usuario y Equipo (Cero TOCTOU)
     public function reservar($equipoId)
     {
-        $user = Auth::user();
-
-        // Evitar que un estudiante acapare múltiples equipos activos a la vez
-        $tieneActiva = Reservacion::where('user_id', $user->id)
-            ->where('estado', 'Activa')
-            ->exists();
-
-        if ($tieneActiva) {
-            return back()->with('error', 'Ya tienes una reservación activa. Cancélala o libérala antes de reservar otro equipo.');
-        }
+        $userId = Auth::id();
 
         try {
-            DB::transaction(function () use ($equipoId, $user) {
-                // BLOQUEO PESIMISTA: Si dos usuarios dan clic al mismo milisegundo,
-                // MariaDB frena al segundo hasta que el primero termine esta transacción.
+            DB::transaction(function () use ($equipoId, $userId) {
+                // 1. Bloqueamos la fila del usuario en 'users' para serializar sus propias solicitudes simultáneas
+                \App\Models\User::where('id', $userId)->lockForUpdate()->firstOrFail();
+
+                // 2. Comprobamos dentro de la transacción si ya tiene reserva activa
+                $tieneActiva = Reservacion::where('user_id', $userId)
+                    ->where('estado', 'Activa')
+                    ->lockForUpdate()
+                    ->exists();
+
+                if ($tieneActiva) {
+                    throw new Exception('Ya tienes una reservación activa. Cancélala o libérala antes de reservar otro equipo.');
+                }
+
+                // 3. Bloqueamos el equipo deseado
                 $equipo = Equipo::where('id', $equipoId)->lockForUpdate()->firstOrFail();
 
                 if ($equipo->estado !== 'Disponible') {
@@ -58,7 +61,7 @@ class ReservacionController extends Controller
                 $equipo->save();
 
                 Reservacion::create([
-                    'user_id' => $user->id,
+                    'user_id' => $userId,
                     'equipo_id' => $equipo->id,
                     'estado' => 'Activa',
                     'fecha_reserva' => now(),
@@ -71,32 +74,38 @@ class ReservacionController extends Controller
         }
     }
 
-    // Cancelar / Liberar reservación (Con validación estricta de dueño)
-    public function cancelar(Reservacion $reservacion)
+    // Cancelar / Liberar reservación con validación atómica dentro de la transacción
+    public function cancelar($reservacionId)
     {
         $user = Auth::user();
 
-        // CANDADO DE PRIVACIDAD: Un estudiante jamás puede cancelar la reserva de otro aunque altere la URL
-        if ($user->rol !== 'admin' && $reservacion->user_id !== $user->id) {
-            abort(403, 'No tienes autorización para modificar reservaciones de otro usuario.');
+        try {
+            DB::transaction(function () use ($reservacionId, $user) {
+                // Bloqueamos la reservación antes de leer su dueño o estado
+                $reservacion = Reservacion::where('id', $reservacionId)->lockForUpdate()->firstOrFail();
+
+                if ($user->rol !== 'admin' && $reservacion->user_id !== $user->id) {
+                    abort(403, 'No tienes autorización para modificar reservaciones de otro usuario.');
+                }
+
+                if ($reservacion->estado !== 'Activa') {
+                    throw new Exception('Esta reservación ya no se encuentra activa.');
+                }
+
+                $reservacion->estado = 'Cancelada';
+                $reservacion->save();
+
+                $equipo = Equipo::where('id', $reservacion->equipo_id)->lockForUpdate()->first();
+                if ($equipo && $equipo->estado === 'Ocupado') {
+                    $equipo->estado = 'Disponible';
+                    $equipo->save();
+                }
+            });
+
+            return redirect()->route('computo.index')->with('success', 'Reservación cancelada y equipo liberado.');
+        } catch (Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        if ($reservacion->estado !== 'Activa') {
-            return back()->with('error', 'Esta reservación ya no se encuentra activa.');
-        }
-
-        DB::transaction(function () use ($reservacion) {
-            $reservacion->estado = 'Cancelada';
-            $reservacion->save();
-
-            $equipo = Equipo::where('id', $reservacion->equipo_id)->lockForUpdate()->first();
-            if ($equipo && $equipo->estado === 'Ocupado') {
-                $equipo->estado = 'Disponible';
-                $equipo->save();
-            }
-        });
-
-        return redirect()->route('computo.index')->with('success', 'Reservación cancelada y equipo liberado.');
     }
 
     public function estadoEquipos()
