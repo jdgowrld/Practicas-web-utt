@@ -33,7 +33,7 @@
     <h5 class="fw-bold mb-3">Equipos del Laboratorio</h5>
     <div class="row g-3 mb-5">
         @forelse($equipos as $eq)
-        <div class="col-md-4 col-lg-3">
+        <div class="col-md-4 col-lg-3" id="card-equipo-{{ $eq->id }}">
             <div class="card h-100 shadow-sm border-0">
                 <div class="card-body d-flex flex-column justify-content-between">
                     <div>
@@ -46,20 +46,22 @@
                                     'Mantenimiento' => 'bg-secondary',
                                 };
                             @endphp
-                            <span class="badge {{ $badge }}">{{ $eq->estado }}</span>
+                            <span class="badge {{ $badge }} badge-estado">{{ $eq->estado }}</span>
                         </div>
                         <p class="text-muted small mb-3">{{ $eq->descripcion }}</p>
                     </div>
 
                     <div>
-                        @if($eq->estado === 'Disponible')
-                            <form action="{{ route('computo.reservar', $eq->id) }}" method="POST" class="mb-2">
-                                @csrf
-                                <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Reservar Equipo</button>
-                            </form>
-                        @else
-                            <button class="btn btn-secondary btn-sm w-100 mb-2" disabled>No Disponible</button>
-                        @endif
+                        <div class="contenedor-accion-reserva">
+                            @if($eq->estado === 'Disponible')
+                                <form action="{{ route('computo.reservar', $eq->id) }}" method="POST" class="mb-2">
+                                    @csrf
+                                    <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Reservar Equipo</button>
+                                </form>
+                            @else
+                                <button class="btn btn-secondary btn-sm w-100 mb-2" disabled>No Disponible</button>
+                            @endif
+                        </div>
 
                         @if(Auth::user()->rol === 'admin')
                             <div class="d-flex gap-1">
@@ -109,7 +111,7 @@
                         <td>#{{ $res->id }}</td>
                         <td class="fw-bold">{{ $res->equipo->codigo }}</td>
                         @if(Auth::user()->rol === 'admin')
-                            <td>{{ $res->usuario->name }} ({{ $res->usuario->email }})</td>
+                            <td>{{ $res->usuario?->name ?? 'Usuario Deshabilitado' }} ({{ $res->usuario?->email ?? 'N/A' }})</td>
                         @endif
                         <td class="small">{{ $res->fecha_reserva->format('d/m/Y H:i:s') }}</td>
                         <td>
@@ -141,4 +143,51 @@
         </div>
     </div>
 </div>
+
+<script>
+    const csrfTokenComputo = "{{ csrf_token() }}";
+
+    // Callback ejecutado automáticamente por <x-auto-sync />
+    window.actualizarEquipos = function(equipos) {
+        equipos.forEach(eq => {
+            const card = document.getElementById('card-equipo-' + eq.id);
+            if (!card) return;
+
+            const badge = card.querySelector('.badge-estado');
+            const contenedorReserva = card.querySelector('.contenedor-accion-reserva');
+
+            // Si el estado no cambió, no tocamos el DOM
+            if (badge && badge.textContent.trim() === eq.estado) return;
+
+            // Actualizar color y texto del badge
+            if (badge) {
+                badge.textContent = eq.estado;
+                badge.className = 'badge badge-estado ' + (
+                    eq.estado === 'Disponible' ? 'bg-success' :
+                    (eq.estado === 'Ocupado' ? 'bg-danger' : 'bg-secondary')
+                );
+            }
+
+            // Actualizar botón de reserva en vivo
+            if (contenedorReserva) {
+                if (eq.estado === 'Disponible') {
+                    contenedorReserva.innerHTML = `
+                        <form action="/computo/reservar/${eq.id}" method="POST" class="mb-2">
+                            <input type="hidden" name="_token" value="${csrfTokenComputo}">
+                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Reservar Equipo</button>
+                        </form>
+                    `;
+                } else {
+                    contenedorReserva.innerHTML = `
+                        <button class="btn btn-secondary btn-sm w-100 mb-2" disabled>No Disponible</button>
+                    `;
+                }
+            }
+        });
+    };
+</script>
+
+<!-- Reutilización del Componente de Polling cada 3 segundos -->
+<x-auto-sync :url="route('computo.estado')" :intervalo="3000" callback="actualizarEquipos" />
+
 @endsection

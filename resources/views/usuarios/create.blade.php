@@ -26,15 +26,15 @@
                         <div class="mb-3">
                         <label class="form-label small fw-bold text-muted">Rol del Sistema</label>
                         <select name="rol" class="form-select @error('rol') is-invalid @enderror">
-                            <option value="">Selecciona un rol...</option>
-                            @if(Auth::user()->rol === 'admin')
-                                <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
-                            @endif
-                            <option value="empleado" {{ old('rol') == 'empleado' ? 'selected' : '' }}>Empleado</option>
+                        <option value="">Selecciona un rol...</option>
+                        @if(Auth::user()->rol === 'admin')
+                            <option value="admin" {{ old('rol') == 'admin' ? 'selected' : '' }}>Administrador</option>
                             <option value="profesor" {{ old('rol') == 'profesor' ? 'selected' : '' }}>Profesor (Práctica 1.3)</option>
-                            <option value="alumno" {{ old('rol') == 'alumno' ? 'selected' : '' }}>Alumno (Prácticas 1.3 y 1.5)</option>
-                            <option value="jugador" {{ old('rol') == 'jugador' ? 'selected' : '' }}>Jugador (Práctica 1.6)</option>
-                        </select>
+                        @endif
+                        <option value="empleado" {{ old('rol') == 'empleado' ? 'selected' : '' }}>Empleado</option>
+                        <option value="alumno" {{ old('rol') == 'alumno' ? 'selected' : '' }}>Alumno (Prácticas 1.3 y 1.5)</option>
+                        <option value="jugador" {{ old('rol') == 'jugador' ? 'selected' : '' }}>Jugador (Práctica 1.6)</option>
+                    </select>
                         @error('rol') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 

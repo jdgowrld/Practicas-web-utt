@@ -15,7 +15,7 @@
                     <div class="d-flex justify-content-between bg-light rounded p-2 mb-3 small">
                         <div>
                             <span class="badge bg-primary">X</span>
-                            <strong>{{ $partida->jugadorX->name }}</strong>
+                            <strong>{{ $partida->jugadorX?->name ?? 'Usuario Deshabilitado' }}</strong>
                         </div>
                         <div>
                             <span class="badge bg-danger">O</span>
@@ -53,6 +53,13 @@
                             <span class="badge bg-secondary">Espectador</span>
                         @endif
                     </p>
+
+                    @if($partida->estado !== 'Finalizada' && (Auth::id() === $partida->jugador_x_id || Auth::id() === $partida->jugador_o_id))
+                        <form action="{{ route('gato.abandonar', $partida) }}" method="POST" class="mt-3" id="form-abandonar">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Abandonar Partida</button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -61,8 +68,6 @@
 
 <script>
     const userId = {{ Auth::id() }};
-    const jugadorXId = {{ $partida->jugador_x_id }};
-    let jugadorOId = {{ $partida->jugador_o_id ?? 'null' }};
     const urlEstado = "{{ route('gato.estado', $partida) }}";
     const urlTirar = "{{ route('gato.tirar', $partida) }}";
     const csrfToken = "{{ csrf_token() }}";
@@ -76,7 +81,8 @@
     let turnoActual = {{ $partida->turno_user_id ?? 'null' }};
     let tableroActual = @json($partida->tablero);
 
-    function renderizar(data) {
+    // Función global invocada por el componente <x-auto-sync />
+    window.renderizar = function(data) {
         estadoActual = data.estado;
         turnoActual = data.turno_user_id;
         tableroActual = data.tablero;
@@ -85,7 +91,6 @@
             nombreO.textContent = data.jugador_o_nombre;
         }
 
-        // Actualizar banner superior
         if (estadoActual === 'Esperando') {
             banner.className = 'alert alert-warning fw-bold py-2 mb-3';
             banner.textContent = 'Esperando a que se una un oponente...';
@@ -98,6 +103,9 @@
                 banner.textContent = 'Turno del oponente... Esperando movimiento';
             }
         } else if (estadoActual === 'Finalizada') {
+            window.detenerAutoSync = true;
+            document.getElementById('form-abandonar')?.classList.add('d-none');
+
             if (data.es_empate) {
                 banner.className = 'alert alert-dark fw-bold py-2 mb-3';
                 banner.textContent = '¡EMPATE! Tablero lleno sin ganador';
@@ -113,7 +121,6 @@
             }
         }
 
-        // Pintar las 9 celdas
         celdas.forEach((btn, idx) => {
             const val = tableroActual[idx];
             btn.textContent = val ?? '';
@@ -122,11 +129,10 @@
             if (val === 'X') btn.classList.add('text-primary');
             if (val === 'O') btn.classList.add('text-danger');
 
-            // Habilitar botón solo si la partida está en curso, es tu turno y la celda está vacía
             const puedeTirar = (estadoActual === 'EnCurso' && turnoActual === userId && val === null);
             btn.disabled = !puedeTirar;
         });
-    }
+    };
 
     // Enviar jugada al backend
     celdas.forEach(btn => {
@@ -151,11 +157,13 @@
                 if (!res.ok || !json.ok) {
                     alertaError.textContent = json.mensaje ?? 'Movimiento no válido.';
                     alertaError.classList.remove('d-none');
-                    consultarEstado();
-                    return;
                 }
 
-                consultarEstado();
+                // Refresco inmediato tras tirar
+                const resEstado = await fetch(urlEstado, { headers: { 'Accept': 'application/json' } });
+                if (resEstado.ok) {
+                    window.renderizar(await resEstado.json());
+                }
             } catch (err) {
                 alertaError.textContent = 'Error de conexión con el servidor.';
                 alertaError.classList.remove('d-none');
@@ -163,19 +171,8 @@
         });
     });
 
-    // Sincronizar con el servidor cada 2 segundos mientras la partida no termine
-    async function consultarEstado() {
-        try {
-            const res = await fetch(urlEstado, { headers: { 'Accept': 'application/json' } });
-            if (res.ok) {
-                const data = await res.json();
-                renderizar(data);
-            }
-        } catch (e) {}
-    }
-
-    // Inicializar estado y arrancar polling
-    renderizar({
+    // Renderizado inicial inmediato al cargar la página
+    window.renderizar({
         estado: estadoActual,
         tablero: tableroActual,
         turno_user_id: turnoActual,
@@ -184,11 +181,8 @@
         es_empate: {{ $partida->es_empate ? 'true' : 'false' }},
         jugador_o_nombre: @json($partida->jugadorO?->name)
     });
-
-    setInterval(() => {
-        if (estadoActual !== 'Finalizada') {
-            consultarEstado();
-        }
-    }, 2000);
 </script>
+
+<!-- Llamada limpia al Componente Reutilizable de Polling -->
+<x-auto-sync :url="route('gato.estado', $partida)" :intervalo="2000" callback="renderizar" />
 @endsection

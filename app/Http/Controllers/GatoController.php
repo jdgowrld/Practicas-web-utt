@@ -45,20 +45,18 @@ class GatoController extends Controller
 
         // 3. Partidas: El Admin ve TODAS las del sistema; el Jugador solo las suyas
         if ($user->rol === 'admin') {
-            $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
-                ->orderBy('updated_at', 'desc')
-                ->get();
-        } else {
-            $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
-                ->where(function ($q) use ($userId) {
-                    $q->where('jugador_x_id', $userId)
-                      ->orWhere('jugador_o_id', $userId);
-                })
-                ->orderBy('updated_at', 'desc')
-                ->limit(10)
-                ->get();
-        }
-
+         $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
+             ->orderBy('updated_at', 'desc')
+             ->paginate(10);
+     } else {
+         $partidas = Partida::with(['jugadorX', 'jugadorO', 'ganador'])
+             ->where(function ($q) use ($userId) {
+                 $q->where('jugador_x_id', $userId)
+                   ->orWhere('jugador_o_id', $userId);
+             })
+             ->orderBy('updated_at', 'desc')
+             ->paginate(10);
+     }
         return view('gato.index', compact('salasDisponibles', 'jugadoresDisponibles', 'partidas'));
     }
 
@@ -79,6 +77,32 @@ class GatoController extends Controller
 
         return redirect()->route('gato.index')->with('success', "Sala #{$partida->id} cancelada por el Administrador.");
     }
+
+    public function abandonar(Partida $partida)
+    {
+        $userId = Auth::id();
+
+        if ($partida->jugador_x_id !== $userId && $partida->jugador_o_id !== $userId) {
+            abort(403, 'No eres participante de esta partida.');
+        }
+
+        if ($partida->estado === 'Finalizada') {
+            return back()->with('error', 'Esta partida ya ha finalizado.');
+        }
+
+        if ($partida->estado === 'EnCurso') {
+            $partida->ganador_id = ($userId === $partida->jugador_x_id)
+                ? $partida->jugador_o_id
+                : $partida->jugador_x_id;
+        }
+
+        $partida->estado = 'Finalizada';
+        $partida->turno_user_id = null;
+        $partida->save();
+
+        return redirect()->route('gato.index')->with('success', 'Has abandonado la partida.');
+    }
+
 
     // Crear una nueva sala (El creador siempre es 'X')
     public function crear()

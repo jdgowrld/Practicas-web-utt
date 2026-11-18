@@ -40,7 +40,7 @@
                         <div class="d-flex justify-content-between align-items-center border-bottom py-2">
                             <div>
                                 <span class="fw-bold">Sala #{{ $sala->id }}</span>
-                                <span class="text-muted small d-block">Anfitrión: {{ $sala->jugadorX->name }}</span>
+                                <span class="text-muted small d-block">Anfitrión: {{ $sala->jugadorX?->name ?? 'Usuario Deshabilitado' }}</span>
                             </div>
                             <form action="{{ route('gato.unirse', $sala->id) }}" method="POST" class="m-0">
                                 @csrf
@@ -105,8 +105,8 @@
                     @forelse($partidas as $p)
                     <tr>
                         <td class="fw-bold">#{{ $p->id }}</td>
-                        <td>{{ $p->jugadorX->name }}</td>
-                        <td>{{ $p->jugadorO?->name ?? 'Esperando...' }}</td>
+                        <td>{{ $p->jugadorX?->name ?? 'Usuario Deshabilitado' }}</td>
+                        <td>{{ $p->jugadorO?->name ?? ($p->estado === 'Esperando' ? 'Esperando...' : 'Usuario Deshabilitado') }}</td>
                         <td>
                             <span class="badge {{ $p->estado === 'Finalizada' ? 'bg-secondary' : ($p->estado === 'EnCurso' ? 'bg-success' : 'bg-warning text-dark') }}">
                                 {{ $p->estado }}
@@ -119,7 +119,7 @@
                                 @elseif($p->ganador)
                                     <span class="text-primary">Ganó: {{ $p->ganador->name }}</span>
                                 @else
-                                    <span class="text-danger">Cancelada por Admin</span>
+                                    <span class="text-danger">Cancelada / Abandonada</span>
                                 @endif
                             @else
                                 <span class="text-muted">-</span>
@@ -148,6 +148,9 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+        <div class="p-3">
+            {{ $partidas->links('pagination::bootstrap-5') }}
         </div>
     </div>
 </div>

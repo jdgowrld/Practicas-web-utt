@@ -98,4 +98,11 @@ class ReservacionController extends Controller
 
         return redirect()->route('computo.index')->with('success', 'Reservación cancelada y equipo liberado.');
     }
+
+    public function estadoEquipos()
+    {
+        $equipos = Equipo::select('id', 'estado')->get();
+
+        return response()->json($equipos);
+    }
 }

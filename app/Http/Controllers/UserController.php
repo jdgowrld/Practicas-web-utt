@@ -23,20 +23,24 @@ class UserController extends Controller
         return view('usuarios.index', compact('usuariosActivos', 'usuariosEliminados'));
     }
 
-    // Formulario de creación
+    
     public function create()
     {
         return view('usuarios.create');
     }
 
-    // Guardar nuevo usuario
+    
     public function store(Request $request)
     {
+        $rolesPermitidos = Auth::user()->rol === 'admin'
+            ? ['admin', 'empleado', 'profesor', 'alumno', 'jugador']
+            : ['empleado', 'alumno', 'jugador'];
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'rol' => ['required', Rule::in(['admin', 'empleado', 'profesor', 'alumno', 'jugador'])],
+            'rol' => ['required', Rule::in($rolesPermitidos)],
         ], [
             'name.required' => 'El nombre es obligatorio.',
             'email.required' => 'El correo es obligatorio.',
@@ -46,13 +50,8 @@ class UserController extends Controller
             'password.min' => 'Mínimo 8 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
             'rol.required' => 'Selecciona un rol válido.',
-            'rol.in' => 'El rol seleccionado no es válido.',
+            'rol.in' => 'No tienes permisos para asignar ese rol.',
         ]);
-
-        // Seguridad: Un empleado no puede crear usuarios con rol admin
-        if (Auth::user()->rol !== 'admin' && $request->rol === 'admin') {
-            abort(403, 'No tienes permisos para asignar el rol de Administrador.');
-        }
 
         User::create([
             'name' => $request->name,

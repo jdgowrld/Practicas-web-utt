@@ -29,8 +29,9 @@ Route::middleware('auth')->group(function () {
         return view('home');
     })->name('home');
 
-    //  rutas de las Prácticas 1.2 a 1.6
 
+
+    //  rutas de las Prácticas 1.2 a 1.6
     // PRÁCTICA 1.2: CRUD DE USUARIOS
     // Rutas permitidas para Admin y Empleado (Lectura, Creación y Edición)
     Route::middleware(['rol:admin,empleado'])->group(function () {
@@ -89,6 +90,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/computo', [App\Http\Controllers\ReservacionController::class, 'index'])->name('computo.index');
     Route::post('/computo/reservar/{equipo}', [App\Http\Controllers\ReservacionController::class, 'reservar'])->name('computo.reservar');
     Route::patch('/computo/cancelar/{reservacion}', [App\Http\Controllers\ReservacionController::class, 'cancelar'])->name('computo.cancelar');
+    Route::get('/computo/estado', [App\Http\Controllers\ReservacionController::class, 'estadoEquipos'])->name('computo.estado');
     });
 
     // Administración del catálogo de equipos (Exclusivo Admin)
@@ -100,10 +102,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/computo/equipos/{equipo}', [App\Http\Controllers\EquipoController::class, 'destroy'])->name('equipos.destroy');
     });
 
-
-    // ==========================================
     // PRÁCTICA 1.6: JUEGO DEL GATO (3x3)
-    // ==========================================
     Route::middleware(['rol:admin,jugador'])->group(function () {
         Route::get('/gato', [App\Http\Controllers\GatoController::class, 'index'])->name('gato.index');
         Route::post('/gato/crear', [App\Http\Controllers\GatoController::class, 'crear'])->name('gato.crear');
@@ -111,6 +110,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/gato/{partida}/jugar', [App\Http\Controllers\GatoController::class, 'jugar'])->name('gato.jugar');
         Route::get('/gato/{partida}/estado', [App\Http\Controllers\GatoController::class, 'estado'])->name('gato.estado');
         Route::post('/gato/{partida}/tirar', [App\Http\Controllers\GatoController::class, 'tirar'])->name('gato.tirar');
+        Route::post('/gato/{partida}/abandonar', [App\Http\Controllers\GatoController::class, 'abandonar'])->name('gato.abandonar');
     });
 
     // Cancelación / cierre forzado exclusivo para Admin

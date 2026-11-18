@@ -47,7 +47,7 @@
                 <tbody>
                     @forelse($registros as $reg)
                     <tr>
-                        <td class="fw-bold">{{ $reg->alumno->name }}</td>
+                        <td class="fw-bold">{{ $reg->alumno?->name ?? 'Usuario Deshabilitado' }}</td>
                         <td class="text-center">{{ $reg->faltas }}</td>
                         <td class="text-center fw-bold">{{ number_format($reg->calificacion, 2) }}</td>
                         <td class="text-center">

@@ -2,24 +2,38 @@
 
 namespace Database\Seeders;
 
+use App\Models\Categoria;
+use App\Models\Equipo;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::firstOrCreate(
+            ['email' => 'admin@utt.edu.mx'],
+            [
+                'name' => 'Admin UTT',
+                'password' => Hash::make('12345678'),
+                'rol' => 'admin',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $categorias = ['Electrónica', 'Cómputo', 'Accesorios', 'Redes', 'Almacenamiento'];
+        foreach ($categorias as $nombre) {
+            Categoria::firstOrCreate(['nombre' => $nombre]);
+        }
+
+        for ($i = 1; $i <= 8; $i++) {
+            Equipo::firstOrCreate(
+                ['codigo' => 'PC-UTT-0' . $i],
+                [
+                    'descripcion' => 'Estación de Trabajo Core i7 - 16GB RAM - SSD 512GB',
+                    'estado' => 'Disponible',
+                ]
+            );
+        }
     }
 }

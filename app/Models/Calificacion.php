@@ -10,7 +10,7 @@ class Calificacion extends Model
 {
     public function alumno()
     {
-        return $this->belongsTo(User::class, 'user_id');
+    return $this->belongsTo(User::class, 'user_id')->withTrashed();
     }
 
     // Accesor automático: $registro->equivalencia
